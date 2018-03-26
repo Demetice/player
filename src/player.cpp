@@ -39,7 +39,8 @@ void Player::operator()() {
 
 void Player::demultiplex() {
 	try {
-		for (;;) {
+		for (;;) 
+		{
 			// Create AVPacket
 			std::unique_ptr<AVPacket, std::function<void(AVPacket*)>> packet{
 				new AVPacket,
