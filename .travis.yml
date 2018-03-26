@@ -24,4 +24,7 @@ install:
     - sudo make install
     - make distclean
     - popd && rm -rf tmp
+    - mkdir build 
+    - cd build
+    - cmake ..
 script: make
