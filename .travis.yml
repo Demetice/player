@@ -17,7 +17,7 @@ install:
     - wget http://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
     - tar xvf ffmpeg-snapshot.tar.bz2
     - cd ffmpeg
-    - ./configure --prefix=/usr --enable-shared --disable-static
+    - ./configure --prefix=/usr/local --enable-shared --disable-static
       --disable-programs --disable-doc --disable-avdevice --disable-postproc
       --disable-avfilter
     - make
