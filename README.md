@@ -1,4 +1,5 @@
 player
+![build](https://travis-ci.org/Demetice/player.svg?branch=master)
 ======
 
 Video player written in C++14 using FFmpeg libraries and SDL2
