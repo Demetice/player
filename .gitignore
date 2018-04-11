@@ -17,3 +17,6 @@ player
 
 #cmake files
 build
+
+#vscode setting files
+.vscode
