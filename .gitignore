@@ -11,9 +11,11 @@
 *.lai
 *.la
 *.a
+*.sln
 
 # Executable
 player
+Debug
 
 #cmake files
 build

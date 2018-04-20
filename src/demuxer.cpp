@@ -9,6 +9,9 @@ Demuxer::Demuxer(const std::string &file_name) {
 		format_context_, nullptr));
 	video_stream_index_ = ffmpeg::check(av_find_best_stream(
 		format_context_, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0));
+
+	audio_stream_index_ = ffmpeg::check(av_find_best_stream(
+		format_context_, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0));
 }
 
 Demuxer::~Demuxer() {
@@ -19,8 +22,16 @@ AVCodecParameters* Demuxer::video_codec_parameters() {
 	return format_context_->streams[video_stream_index_]->codecpar;
 }
 
+AVCodecParameters* Demuxer::audio_codec_parameters() {
+	return format_context_->streams[audio_stream_index_]->codecpar;
+}
+
 int Demuxer::video_stream_index() const {
 	return video_stream_index_;
+}
+
+int Demuxer::audio_stream_index() const {
+	return audio_stream_index_;
 }
 
 AVRational Demuxer::time_base() const {
