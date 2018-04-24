@@ -5,6 +5,7 @@
 #include "queue.h"
 #include "timer.h"
 #include "video_decoder.h"
+#include "audio_decoder.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -21,14 +22,17 @@ public:
 private:
 	void demultiplex();
 	void decode_video();
+	void decode_audio();
 	void video();
 private:
 	std::unique_ptr<Demuxer> demuxer_;
 	std::unique_ptr<VideoDecoder> video_decoder_;
+	std::unique_ptr<AudioDecoder> audio_decoder_;
 	std::unique_ptr<FormatConverter> format_converter_;
 	std::unique_ptr<Display> display_;
 	std::unique_ptr<Timer> timer_;
 	std::unique_ptr<PacketQueue> packet_queue_;
+	std::unique_ptr<PacketQueue> packet_audio_queue_;
 	std::unique_ptr<FrameQueue> frame_queue_;
 	std::vector<std::thread> stages_;
 	static const size_t queue_size_;

@@ -7,12 +7,14 @@ extern "C" {
 	#include <libavutil/imgutils.h>
 }
 
-const size_t Player::queue_size_{5};
+const size_t Player::queue_size_{10};
 
 Player::Player(const std::string &file_name) :
 	demuxer_{std::make_unique<Demuxer>(file_name)},
 	video_decoder_{std::make_unique<VideoDecoder>(
 		demuxer_->video_codec_parameters())},
+	audio_decoder_{ std::make_unique<AudioDecoder>(
+		demuxer_->audio_codec_parameters()) },
 	format_converter_{std::make_unique<FormatConverter>(
 		video_decoder_->width(), video_decoder_->height(),
 		video_decoder_->pixel_format(), AV_PIX_FMT_YUV420P)},
@@ -20,12 +22,14 @@ Player::Player(const std::string &file_name) :
 		video_decoder_->width(), video_decoder_->height())},
 	timer_{std::make_unique<Timer>()},
 	packet_queue_{std::make_unique<PacketQueue>(queue_size_)},
+	packet_audio_queue_{ std::make_unique<PacketQueue>(queue_size_) },
 	frame_queue_{std::make_unique<FrameQueue>(queue_size_)} {
 }
 
 void Player::operator()() {
 	stages_.emplace_back(&Player::demultiplex, this);
 	stages_.emplace_back(&Player::decode_video, this);
+	stages_.emplace_back(&Player::decode_audio, this);
 	video();
 
 	for (auto &stage : stages_) {
@@ -51,6 +55,7 @@ void Player::demultiplex() {
 			// Read frame into AVPacket
 			if (!(*demuxer_)(*packet)) {
 				packet_queue_->finished();
+				packet_audio_queue_->finished();
 				break;
 			}
 
@@ -59,15 +64,56 @@ void Player::demultiplex() {
 				if (!packet_queue_->push(move(packet))) {
 					break;
 				}
+			}else if (packet->stream_index == demuxer_->audio_stream_index()) {
+				if (!packet_audio_queue_->push(move(packet))) {
+					break;
+				}
 			}
 		}
 	} catch (...) {
 		exception_ = std::current_exception();
 		frame_queue_->quit();
 		packet_queue_->quit();
+		packet_audio_queue_->finished();
 	}
 }
 
+void Player::decode_audio() {
+	try {
+		for (;;) {
+			// Create AVFrame and AVQueue
+			std::unique_ptr<AVFrame, std::function<void(AVFrame*)>>
+				frame_decoded{
+				av_frame_alloc(), [](AVFrame* f) { av_frame_free(&f); } };
+			std::unique_ptr<AVPacket, std::function<void(AVPacket*)>> packet{
+				nullptr, [](AVPacket* p) { av_packet_unref(p); delete p; } };
+
+			// Read packet from queue
+			if (!packet_audio_queue_->pop(packet)) {
+				packet_audio_queue_->finished();
+				break;
+			}
+
+			// If the packet didn't send, receive more frames and try again
+			bool sent = false;
+			while (!sent) {
+				sent = audio_decoder_->send(packet.get());
+
+				// If a whole frame has been decoded,
+				// adjust time stamps and add to queue
+				while (audio_decoder_->receive(frame_decoded.get())) {
+					;
+				}
+			}
+		}
+	}
+	catch (...) {
+		exception_ = std::current_exception();
+		frame_queue_->quit();
+		packet_queue_->quit();
+		packet_audio_queue_->quit();
+	}
+}
 void Player::decode_video() {
 	try {
 		const AVRational microseconds = {1, 1000000};
@@ -126,6 +172,7 @@ void Player::decode_video() {
 		exception_ = std::current_exception();
 		frame_queue_->quit();
 		packet_queue_->quit();
+		packet_audio_queue_->quit();
 	}
 }
 
@@ -176,4 +223,5 @@ void Player::video() {
 
 	frame_queue_->quit();
 	packet_queue_->quit();
+	packet_audio_queue_->quit();
 }

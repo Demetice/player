@@ -1,7 +1,7 @@
 #include "audio_decoder.h"
 #include "ffmpeg.h"
 
-audio_decoder::audio_decoder(AVCodecParameters * codec_parameters)
+AudioDecoder::AudioDecoder(AVCodecParameters * codec_parameters)
 {
 //	avcodec_register_all();
 	const auto codec = avcodec_find_decoder(codec_parameters->codec_id);
@@ -22,14 +22,30 @@ audio_decoder::audio_decoder(AVCodecParameters * codec_parameters)
 	}
 
 	ffmpeg::check(avcodec_open2(codec_context_, codec, nullptr));
+
+	out_pcm_file_ = fopen("out.pcm", "w+");
 }
 
-audio_decoder::~audio_decoder()
+void AudioDecoder::save_auido_to_pcm(AVFrame *frame)
+{
+	int data_size = av_get_bytes_per_sample(codec_context_->sample_fmt);
+	if (data_size < 0) {
+		/* This should not occur, checking just for paranoia */
+		fprintf(stderr, "Failed to calculate data size\n");
+		throw std::logic_error{ "Failed to calculate data size" };
+	}
+	for (int i = 0; i < frame->nb_samples; i++)
+		for (int ch = 0; ch < codec_context_->channels; ch++)
+			fwrite(frame->data[ch] + data_size * i, 1, data_size, out_pcm_file_);
+}
+
+AudioDecoder::~AudioDecoder()
 {
 	avcodec_free_context(&codec_context_);
+	fclose(out_pcm_file_);
 }
 
-bool audio_decoder::send(AVPacket * packet)
+bool AudioDecoder::send(AVPacket * packet)
 {
 	auto ret = avcodec_send_packet(codec_context_, packet);
 	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -41,13 +57,14 @@ bool audio_decoder::send(AVPacket * packet)
 	}
 }
 
-bool audio_decoder::receive(AVFrame * frame)
+bool AudioDecoder::receive(AVFrame * frame)
 {
 	auto ret = avcodec_receive_frame(codec_context_, frame);
 	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
 		return false;
 	}
 	else {
+		save_auido_to_pcm(frame);
 		ffmpeg::check(ret);
 		return true;
 	}

@@ -7,6 +7,9 @@ Demuxer::Demuxer(const std::string &file_name) {
 		&format_context_, file_name.c_str(), nullptr, nullptr));
 	ffmpeg::check(avformat_find_stream_info(
 		format_context_, nullptr));
+
+	av_dump_format(format_context_, 0, file_name.c_str(), false);
+
 	video_stream_index_ = ffmpeg::check(av_find_best_stream(
 		format_context_, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0));
 

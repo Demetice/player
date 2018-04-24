@@ -4,16 +4,18 @@ extern "C" {
 #include "libavcodec/avcodec.h"
 }
 
-class audio_decoder
+class AudioDecoder
 {
 public:
-	audio_decoder(AVCodecParameters* codec_parameters);
-	~audio_decoder();
+	AudioDecoder(AVCodecParameters* codec_parameters);
+	~AudioDecoder();
 	bool send(AVPacket* packet);
 	bool receive(AVFrame* frame);
+	void save_auido_to_pcm(AVFrame *frame);
 
 private:
 	AVCodecContext * codec_context_{};
 	AVCodecParserContext *parser_{};
+	FILE *out_pcm_file_{};
 };
 
