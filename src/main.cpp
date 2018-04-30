@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
 			throw std::logic_error{"Not enough arguments"};
 		}
 
-		Player play{"D:\\CloudMusic\\MV\\Ìïð¥Õç - Äã¾Í²»ÒªÏëÆðÎÒ.mp4"};
+		Player play{"D:\\CloudMusic\\MV\\ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½Í²ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.mp4"};
 		play();
 	}
 
@@ -55,12 +55,14 @@ int main(int argc, char** argv) {
 * @example demuxing_decoding.c
 */
 
-#define __STDC_CONSTANT_MACROS  
-
-#include <libavutil/imgutils.h>
-#include <libavutil/samplefmt.h>
-#include <libavutil/timestamp.h>
-#include <libavformat/avformat.h>
+extern "C"
+{
+	#define __STDC_CONSTANT_MACROS  
+	#include <libavutil/imgutils.h>
+	#include <libavutil/samplefmt.h>
+	#include <libavutil/timestamp.h>
+	#include <libavformat/avformat.h>
+}
 
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *video_dec_ctx = NULL, *audio_dec_ctx;
@@ -282,7 +284,7 @@ int main(int argc, char **argv)
 	//video_dst_filename = argv[2];
 	//audio_dst_filename = argv[3];
 
-	src_filename = "D:\\CloudMusic\\MV\\Ìïð¥Õç - Äã¾Í²»ÒªÏëÆðÎÒ.mp4";
+	src_filename = "D:\\CloudMusic\\MV\\ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½Í²ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.mp4";
 	video_dst_filename = "out_video.yuv";
 	audio_dst_filename = "out_audio.pcm";
 
